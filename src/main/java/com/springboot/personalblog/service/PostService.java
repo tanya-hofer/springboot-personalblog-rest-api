@@ -1,13 +1,12 @@
 package com.springboot.personalblog.service;
 
 import com.springboot.personalblog.DTO.PostDTO;
-
-import java.util.List;
+import com.springboot.personalblog.DTO.PostResponse;
 
 public interface PostService {
     PostDTO createPost(PostDTO postDTO);
 
-    List<PostDTO> getAllPosts();
+    PostResponse getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir);
 
     PostDTO getPostById(long id);
 
