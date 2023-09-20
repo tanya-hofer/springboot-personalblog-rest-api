@@ -6,6 +6,7 @@ import com.springboot.personalblog.exception.ResourceNotFoundException;
 import com.springboot.personalblog.model.Post;
 import com.springboot.personalblog.repository.PostRepository;
 import com.springboot.personalblog.service.PostService;
+import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -17,18 +18,18 @@ import java.util.stream.Collectors;
 @Service
 public class PostServiceImpl implements PostService {
     private PostRepository postRepository;
+    private ModelMapper mapper;
 
-    public PostServiceImpl(PostRepository postRepository) {
+    public PostServiceImpl(PostRepository postRepository, ModelMapper mapper) {
         this.postRepository = postRepository;
+        this.mapper = mapper;
     }
 
     @Override
     public PostDTO createPost(PostDTO postDTO) {
-        Post post = mapToEntity(postDTO);
-        Post newPost = postRepository.save(post);
-
-        PostDTO postResponse =  mapToDTO(newPost);
-        return postResponse;
+        Post post = mapper.map(postDTO,Post.class);
+        Post createdPost = postRepository.save(post);
+        return mapper.map(createdPost,PostDTO.class);
     }
     @Override
     public PostResponse getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir){
@@ -39,7 +40,7 @@ public class PostServiceImpl implements PostService {
 
         //get content for page object
         List<Post> listOfPosts = posts.getContent();
-        List<PostDTO> content = listOfPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+        List<PostDTO> content = listOfPosts.stream().map(post -> mapper.map(post,PostDTO.class)).collect(Collectors.toList());
 
         PostResponse postResponse = new PostResponse(content,pageNo, pageSize, posts.getTotalElements(), posts.getTotalPages(), posts.isLast());
 
@@ -49,7 +50,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostDTO getPostById(long id) {
         Post post = postRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Post", "id", id));
-        return mapToDTO(post);
+        return mapper.map(post,PostDTO.class);
     }
 
     @Override
@@ -63,31 +64,12 @@ public class PostServiceImpl implements PostService {
         post.setTitle(postDTO.getTitle());
         Post updatedPost = postRepository.save(post);
 
-        return mapToDTO(updatedPost);
+        return mapper.map(updatedPost,PostDTO.class);
     }
 
     @Override
     public void deletePostById(long id) {
         Post post = postRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Post", "id", id));
         postRepository.delete(post);
-    }
-
-    //convert entity into dto
-    private PostDTO mapToDTO(Post post) {
-        PostDTO postDTO= new PostDTO();
-        postDTO.setId(post.getId());
-        postDTO.setTitle(post.getTitle());
-        postDTO.setDescription(post.getDescription());
-        postDTO.setContent(post.getContent());
-        return postDTO;
-    }
-
-    private Post mapToEntity(PostDTO postDTO){
-        Post post = new Post();
-        post.setId(postDTO.getId());
-        post.setTitle(postDTO.getTitle());
-        post.setDescription(postDTO.getDescription());
-        post.setContent(postDTO.getContent());
-        return post;
     }
 }
